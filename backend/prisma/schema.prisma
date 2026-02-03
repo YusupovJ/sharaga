@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum UserRole {
+  admin
+  moderator
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  login     String    @unique
+  password  String
+  token     String?
+  role      UserRole  @default(moderator)
+
+  dormitory Dormitory?
+}
+
+model Students {
+  id          Int        @id @default(autoincrement())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  fullName    String
+  
+  dormitoryId Int?
+  dormitory   Dormitory? @relation(fields: [dormitoryId], references: [id])
+
+  @@map("students")
+}
+
+model Dormitory {
+  id        Int        @id @default(autoincrement())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  name      String
+
+  students  Students[]
+
+  userId    Int?       @unique
+  user      User?      @relation(fields: [userId], references: [id])
+
+  @@map("dormitory")
+}
