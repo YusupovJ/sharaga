@@ -1,5 +1,9 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Form, Input, Typography } from "antd";
+import { useMutation } from "@tanstack/react-query";
+import { Button, Form, Input, message, Typography } from "antd";
+import { useNavigate } from "react-router";
+import { api } from "../lib/axios";
+import { useAuthStore, type IUser } from "../store/authStore";
 
 const { Title } = Typography;
 
@@ -9,8 +13,22 @@ interface AuthRequest {
 }
 
 const LoginPage = () => {
+  const { mutate } = useMutation<IUser, string, AuthRequest>({
+    mutationFn: (values) => api.post("/auth/login", values),
+  });
+  const { setAuth } = useAuthStore();
+  const navigate = useNavigate();
+
   const onFinish = async (values: AuthRequest) => {
-    console.log(values);
+    mutate(values, {
+      onSuccess(data) {
+        setAuth(data);
+        navigate("/");
+      },
+      onError(error) {
+        message.error(error);
+      },
+    });
   };
 
   return (

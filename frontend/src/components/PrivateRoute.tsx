@@ -1,7 +1,8 @@
-import { Navigate, Outlet } from "react-router";
+import { Navigate } from "react-router";
 import { useAuthStore } from "../store/authStore";
+import { App } from "./App";
 
 export const PrivateRoute = () => {
-  const token = useAuthStore((state) => state.token);
-  return token ? <Outlet /> : <Navigate to="/login" replace />;
+  const { user } = useAuthStore();
+  return user ? <App /> : <Navigate to="/login" replace />;
 };
