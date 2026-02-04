@@ -26,4 +26,4 @@ dist
 # Misc
 .DS_Store
 *.pem
-/generated/prisma
+/**/generated/prisma/**/*.*
