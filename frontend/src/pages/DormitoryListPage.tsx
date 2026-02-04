@@ -1,0 +1,224 @@
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Button, Form, Input, Modal, Popconfirm, Space, Table, Typography, message } from "antd";
+import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
+import type { FilterValue, SorterResult } from "antd/es/table/interface";
+import { useState } from "react";
+import { api } from "../lib/axios";
+import { queryClient } from "../lib/queryClient";
+import type { CreateDormitoryDto, IDormitory, IError, IPaginatedResponse, UpdateDormitoryDto } from "../lib/types";
+
+const { Title } = Typography;
+const { Search } = Input;
+
+const DormitoryListPage = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingDormitory, setEditingDormitory] = useState<IDormitory | null>(null);
+  const [form] = Form.useForm();
+
+  // Params state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("createdAt");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+
+  // --- Queries ---
+  const { data: response, isLoading } = useQuery<IPaginatedResponse<IDormitory>>({
+    queryKey: ["dormitories", page, limit, search, sort, order],
+    queryFn: async () => {
+      const data = await api.get("/dormitory", {
+        params: { page, limit, search, sort, order },
+      });
+      return data as unknown as IPaginatedResponse<IDormitory>;
+    },
+  });
+
+  // --- Mutations ---
+  const { mutate: createDormitory, isPending: isCreating } = useMutation<IDormitory, IError, CreateDormitoryDto>({
+    mutationFn: (values) => api.post("/dormitory", values),
+    onSuccess: () => {
+      message.success("Yotoqxona yaratildi");
+      queryClient.invalidateQueries({ queryKey: ["dormitories"] });
+      handleCloseModal();
+    },
+    onError: (error) => {
+      message.error(error.message || "Yaratishda xatolik yuz berdi");
+    },
+  });
+
+  const { mutate: updateDormitory, isPending: isUpdating } = useMutation<IDormitory, IError, UpdateDormitoryDto>({
+    mutationFn: (values) => api.patch(`/dormitory/${editingDormitory?.id}`, values),
+    onSuccess: () => {
+      message.success("Yotoqxona yangilandi");
+      queryClient.invalidateQueries({ queryKey: ["dormitories"] });
+      handleCloseModal();
+    },
+    onError: (error) => {
+      message.error(error.message || "Yangilashda xatolik yuz berdi");
+    },
+  });
+
+  const { mutate: deleteDormitory } = useMutation<void, IError, number>({
+    mutationFn: (id) => api.delete(`/dormitory/${id}`),
+    onSuccess: () => {
+      message.success("Yotoqxona o'chirildi");
+      queryClient.invalidateQueries({ queryKey: ["dormitories"] });
+    },
+    onError: (error) => {
+      message.error(error.message || "O'chirishda xatolik yuz berdi");
+    },
+  });
+
+  // --- Handlers ---
+  const handleTableChange = (
+    pagination: TablePaginationConfig,
+    filters: Record<string, FilterValue | null>,
+    sorter: SorterResult<IDormitory> | SorterResult<IDormitory>[],
+  ) => {
+    setPage(pagination.current || 1);
+    setLimit(pagination.pageSize || 10);
+
+    if (!Array.isArray(sorter)) {
+      if (sorter.field) {
+        setSort(sorter.field as string);
+        setOrder(sorter.order === "ascend" ? "asc" : "desc");
+      } else {
+        setSort("createdAt");
+        setOrder("desc");
+      }
+    }
+  };
+
+  const onSearch = (value: string) => {
+    setSearch(value);
+    setPage(1); // Reset to first page on search
+  };
+
+  const handleOpenCreate = () => {
+    setEditingDormitory(null);
+    form.resetFields();
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (record: IDormitory) => {
+    setEditingDormitory(record);
+    form.setFieldsValue({ name: record.name });
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingDormitory(null);
+    form.resetFields();
+  };
+
+  const onFinish = (values: CreateDormitoryDto) => {
+    if (editingDormitory) {
+      updateDormitory(values);
+    } else {
+      createDormitory(values);
+    }
+  };
+
+  // --- Columns ---
+  const columns: ColumnsType<IDormitory> = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      width: "80px",
+      sorter: true,
+    },
+    {
+      title: "Nomi",
+      dataIndex: "name",
+      key: "name",
+      sorter: true,
+    },
+    {
+      title: "Talabalar soni",
+      key: "studentsCount",
+      render: (_, record) => record._count?.students || 0,
+    },
+    {
+      title: "Amallar",
+      key: "action",
+      width: "100px",
+      render: (_: unknown, record: IDormitory) => (
+        <Space size="middle">
+          <Button type="primary" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)} />
+          <Popconfirm
+            title="Siz haqiqatan ham ushbu yotoqxonani o'chirmoqchimisiz?"
+            onConfirm={() => deleteDormitory(record.id)}
+            okText="Ha"
+            cancelText="Yo'q"
+          >
+            <Button type="primary" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <main className="p-6">
+      <div className="flex justify-between items-center mb-4">
+        <Title level={2}>Yotoqxonalar</Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
+          Yotoqxona qo'shish
+        </Button>
+      </div>
+
+      <div className="mb-4">
+        <Search
+          placeholder="Qidirish..."
+          allowClear
+          onSearch={onSearch}
+          onChange={(e) => {
+            if (e.target.value === "") onSearch("");
+          }}
+          style={{ width: 300 }}
+        />
+      </div>
+
+      <Table
+        columns={columns}
+        dataSource={response?.data}
+        rowKey="id"
+        loading={isLoading}
+        pagination={{
+          current: page,
+          pageSize: limit,
+          total: response?.meta.total,
+          showSizeChanger: true,
+        }}
+        onChange={handleTableChange}
+      />
+
+      <Modal
+        title={editingDormitory ? "Yotoqxonani tahrirlash" : "Yotoqxona yaratish"}
+        open={isModalOpen}
+        onCancel={handleCloseModal}
+        footer={null}
+      >
+        <Form form={form} layout="vertical" onFinish={onFinish}>
+          <Form.Item label="Nomi" name="name" rules={[{ required: true, message: "Iltimos, nomini kiriting!" }]}>
+            <Input placeholder="Masalan: 1-sonli yotoqxona" />
+          </Form.Item>
+
+          <Form.Item className="mb-0 text-right">
+            <Space>
+              <Button onClick={handleCloseModal}>Bekor qilish</Button>
+              <Button type="primary" htmlType="submit" loading={isCreating || isUpdating}>
+                {editingDormitory ? "Saqlash" : "Yaratish"}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </main>
+  );
+};
+
+export default DormitoryListPage;

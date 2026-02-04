@@ -16,7 +16,7 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  ({ data, config, headers, statusText }) => ({ ...data, config, headers, statusText }),
+  (response) => response.data,
   async (error: AxiosError) => {
     const originalConfig = error.config;
     if (error.message === "Network Error") {
@@ -45,6 +45,6 @@ api.interceptors.response.use(
       return api.request(originalConfig);
     }
 
-    return Promise.reject(error);
+    return Promise.reject(error.response?.data || error);
   },
 );

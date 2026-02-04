@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Button, Form, Input, message, Typography } from "antd";
 import { useNavigate } from "react-router";
 import { api } from "../lib/axios";
+import type { IError } from "../lib/types";
 import { useAuthStore, type IUser } from "../store/authStore";
 
 const { Title } = Typography;
@@ -13,7 +14,7 @@ interface AuthRequest {
 }
 
 const LoginPage = () => {
-  const { mutate } = useMutation<IUser, string, AuthRequest>({
+  const { mutate } = useMutation<IUser, IError, AuthRequest>({
     mutationFn: (values) => api.post("/auth/login", values),
   });
   const { setAuth } = useAuthStore();
@@ -26,7 +27,7 @@ const LoginPage = () => {
         navigate("/");
       },
       onError(error) {
-        message.error(error);
+        message.error(error.message);
       },
     });
   };
@@ -48,7 +49,7 @@ const LoginPage = () => {
           requiredMark={false}
           size="large"
         >
-          <Form.Item name="login" rules={[{ required: true, message: "Пожалуйста, введите ваш логин!" }]}>
+          <Form.Item name="login" rules={[{ required: true, message: "Iltimos, loginingizni kiriting!" }]}>
             <Input
               prefix={<UserOutlined className="text-gray-400" />}
               placeholder="Login"
@@ -56,7 +57,7 @@ const LoginPage = () => {
             />
           </Form.Item>
 
-          <Form.Item name="password" rules={[{ required: true, message: "Пожалуйста, введите ваш пароль!" }]}>
+          <Form.Item name="password" rules={[{ required: true, message: "Iltimos, parolingizni kiriting!" }]}>
             <Input.Password
               prefix={<LockOutlined className="text-gray-400" />}
               placeholder="••••••••"
@@ -70,7 +71,7 @@ const LoginPage = () => {
               htmlType="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base font-semibold transition-all"
             >
-              Yuborish
+              Kirish
             </Button>
           </Form.Item>
         </Form>

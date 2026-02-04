@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { PrivateRoute } from "./components/PrivateRoute";
+import DormitoryListPage from "./pages/DormitoryListPage";
 import LoginPage from "./pages/LoginPage";
 
 const router = createBrowserRouter([
@@ -15,15 +16,19 @@ const router = createBrowserRouter([
         path: "/",
         element: (
           <div className="p-4">
-            <h1>Dashboard (Protected)</h1>
+            <h1>Bosh sahifa (Himoyalangan)</h1>
           </div>
         ),
+      },
+      {
+        path: "/dormitories",
+        element: <DormitoryListPage />,
       },
     ],
   },
   {
     path: "*",
-    element: "Not found",
+    element: "Sahifa topilmadi",
   },
 ]);
 
