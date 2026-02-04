@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { compareSync } from "bcrypt";
-import { UserRole } from "generated/prisma/enums";
 import { envConfig } from "src/common/config/env.config";
 import { PrismaService } from "src/common/services/prisma.service";
 import { IPayload } from "src/common/types";
 import { LoginDto, RefreshDto } from "./dto/auth.dto";
+import { UserRole } from "generated/prisma/enums";
 
 @Injectable()
 export class AuthService {
