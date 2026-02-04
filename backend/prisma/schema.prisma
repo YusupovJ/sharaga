@@ -1,19 +1,19 @@
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-
 enum UserRole {
   admin
   moderator
 }
 
-model User {
+model user {
   id        Int       @id @default(autoincrement())
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -22,31 +22,46 @@ model User {
   token     String?
   role      UserRole  @default(moderator)
 
-  dormitory Dormitory?
+  dormitory dormitory?
+  history   history[]
 }
 
-model Students {
+model students {
   id          Int        @id @default(autoincrement())
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   fullName    String
+  passport    String
+  faculty     String
+  roomNumber  String
+  job         String?
   
   dormitoryId Int?
-  dormitory   Dormitory? @relation(fields: [dormitoryId], references: [id])
-
-  @@map("students")
+  dormitory   dormitory? @relation(fields: [dormitoryId], references: [id])
 }
 
-model Dormitory {
+model dormitory {
   id        Int        @id @default(autoincrement())
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   name      String
 
-  students  Students[]
+  students  students[]
 
   userId    Int?       @unique
-  user      User?      @relation(fields: [userId], references: [id])
+  user      user?      @relation(fields: [userId], references: [id])
 
-  @@map("dormitory")
+  history   history[]
+}
+
+model history {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  userId      Int       @unique
+  user        user      @relation(fields: [userId], references: [id])
+
+  dormitoryId Int
+  dormitory   dormitory @relation(fields: [dormitoryId], references: [id])
 }
