@@ -1,4 +1,8 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, UseGuards } from "@nestjs/common";
+import { Roles } from "src/common/decorators/roles.decorator";
+import { CurrentUser } from "src/common/decorators/user.decorator";
+import { RolesGuard } from "src/common/guards/role.guard";
+import type { IPayload } from "src/common/types";
 import { AuthService } from "./auth.service";
 import { LoginDto, RefreshDto } from "./dto/auth.dto";
 
@@ -11,13 +15,15 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @Post("login")
+  @Post("refresh")
   refresh(@Body() refreshDto: RefreshDto) {
     return this.authService.refresh(refreshDto);
   }
 
   @Post("logout")
-  logout() {
-    return this.authService.logout(1);
+  @Roles("admin", "moderator")
+  @UseGuards(RolesGuard)
+  logout(@CurrentUser() user: IPayload) {
+    return this.authService.logout(user.id);
   }
 }

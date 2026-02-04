@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, UnauthorizedException } from "@nestjs/co
 import { JwtService } from "@nestjs/jwt";
 import { compareSync } from "bcrypt";
 import { UserRole } from "generated/prisma/enums";
+import { envConfig } from "src/common/config/env.config";
 import { PrismaService } from "src/common/services/prisma.service";
 import { IPayload } from "src/common/types";
 import { LoginDto, RefreshDto } from "./dto/auth.dto";
@@ -34,12 +35,19 @@ export class AuthService {
       where: { id: user.id },
     });
 
-    return { accessToken, refreshToken };
+    return {
+      id: user.id,
+      role: user.role,
+      accessToken,
+      refreshToken,
+    };
   }
 
   async refresh({ token }: RefreshDto) {
     try {
-      const payload: IPayload = await this.jwt.verifyAsync(token);
+      const payload: IPayload = this.jwt.verify(token, {
+        secret: envConfig.secretKey,
+      });
       const user = await this.prisma.user.findUnique({
         where: { id: payload.id },
       });
@@ -55,7 +63,11 @@ export class AuthService {
         data: { token: tokens.refreshToken },
       });
 
-      return tokens;
+      return {
+        ...tokens,
+        id: user.id,
+        role: user.role,
+      };
     } catch {
       throw new UnauthorizedException("Token yaroqsiz");
     }
@@ -72,8 +84,8 @@ export class AuthService {
 
   private generateTokens(id: number, role: UserRole) {
     return {
-      accessToken: this.jwt.sign({ id, role }, { expiresIn: "15m" }),
-      refreshToken: this.jwt.sign({ id, role }, { expiresIn: "15d" }),
+      accessToken: this.jwt.sign({ id, role }, { expiresIn: "15m", secret: envConfig.secretKey }),
+      refreshToken: this.jwt.sign({ id, role }, { expiresIn: "15d", secret: envConfig.secretKey }),
     };
   }
 }

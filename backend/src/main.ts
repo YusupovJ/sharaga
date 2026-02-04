@@ -4,7 +4,11 @@ import { envConfig } from "./common/config/env.config";
 import { AppModule } from "./modules/app.module";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    cors: {
+      origin: "*",
+    },
+  });
   app.useGlobalPipes(new ValidationPipe());
   await app.listen(envConfig.port);
 }
