@@ -1,5 +1,4 @@
 import { defineConfig } from "prisma/config";
-import { envConfig } from "./src/common/config/env.config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -8,6 +7,6 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: envConfig.dbUrl,
+    url: process.env.DATABASE_URL,
   },
 });
