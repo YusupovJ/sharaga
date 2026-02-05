@@ -35,6 +35,7 @@ export class DormitoryService {
         where,
         include: {
           students: true,
+          user: true,
           _count: {
             select: { students: true },
           },

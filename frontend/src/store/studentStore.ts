@@ -6,6 +6,7 @@ interface StudentStore {
   toggleMode: () => void;
   setAttendance: (studentId: number, isPresent: boolean) => void;
   resetAttendance: () => void;
+  clearAttendanceData: () => void;
 }
 
 export const useStudentStore = create<StudentStore>((set) => ({
@@ -24,4 +25,5 @@ export const useStudentStore = create<StudentStore>((set) => ({
       },
     })),
   resetAttendance: () => set({ attendanceData: {}, isAttendanceMode: false }),
+  clearAttendanceData: () => set({ attendanceData: {} }),
 }));

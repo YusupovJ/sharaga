@@ -1,13 +1,20 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Button, Form, Input, Modal, Popconfirm, Space, Table, Typography, message } from "antd";
+import { Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Typography, message } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import type { FilterValue, SorterResult } from "antd/es/table/interface";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { api } from "../lib/axios";
 import { queryClient } from "../lib/queryClient";
-import type { CreateDormitoryDto, IDormitory, IError, IPaginatedResponse, UpdateDormitoryDto } from "../lib/types";
+import type {
+  CreateDormitoryDto,
+  IDormitory,
+  IError,
+  IPaginatedResponse,
+  IUser,
+  UpdateDormitoryDto,
+} from "../lib/types";
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -31,6 +38,14 @@ const DormitoryListPage = () => {
         params: { page, limit, search, sort, order },
       });
       return data as unknown as IPaginatedResponse<IDormitory>;
+    },
+  });
+
+  const { data: moderators } = useQuery<IUser[]>({
+    queryKey: ["moderators"],
+    queryFn: async () => {
+      const data = await api.get("/users/moderators");
+      return data as unknown as IUser[];
     },
   });
 
@@ -101,7 +116,7 @@ const DormitoryListPage = () => {
 
   const handleOpenEdit = (record: IDormitory) => {
     setEditingDormitory(record);
-    form.setFieldsValue({ name: record.name });
+    form.setFieldsValue({ name: record.name, userId: record.userId });
     setIsModalOpen(true);
   };
 
@@ -124,7 +139,7 @@ const DormitoryListPage = () => {
       title: "ID",
       dataIndex: "id",
       key: "id",
-      width: "80px",
+      width: "100px",
       sorter: true,
     },
     {
@@ -137,6 +152,11 @@ const DormitoryListPage = () => {
       title: "Talabalar soni",
       key: "studentsCount",
       render: (_, record) => record._count?.students || 0,
+    },
+    {
+      title: "Moderator",
+      key: "moderator",
+      render: (_, record) => record.user?.login || "-",
     },
     {
       title: "Amallar",
@@ -154,7 +174,7 @@ const DormitoryListPage = () => {
           />
           <Popconfirm
             title="Siz haqiqatan ham ushbu yotoqxonani o'chirmoqchimisiz?"
-            onConfirm={() => deleteDormitory(record.id)}
+            onConfirm={(e) => [deleteDormitory(record.id), e?.stopPropagation()]}
             onCancel={(e) => e?.stopPropagation()}
             okText="Ha"
             cancelText="Yo'q"
@@ -167,9 +187,11 @@ const DormitoryListPage = () => {
   ];
 
   return (
-    <main className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <Title level={2}>Yotoqxonalar</Title>
+    <main className="p-4 md:p-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <Title level={2} className="mb-0!">
+          Yotoqxonalar
+        </Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
           Yotoqxona qo'shish
         </Button>
@@ -183,7 +205,7 @@ const DormitoryListPage = () => {
           onChange={(e) => {
             if (e.target.value === "") onSearch("");
           }}
-          style={{ width: 300 }}
+          className="w-[300px]!"
         />
       </div>
 
@@ -192,6 +214,7 @@ const DormitoryListPage = () => {
         dataSource={response?.data}
         rowKey="id"
         loading={isLoading}
+        scroll={{ x: 600 }}
         pagination={{
           current: page,
           pageSize: limit,
@@ -214,6 +237,17 @@ const DormitoryListPage = () => {
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Form.Item label="Nomi" name="name" rules={[{ required: true, message: "Iltimos, nomini kiriting!" }]}>
             <Input placeholder="Masalan: 1-sonli yotoqxona" />
+          </Form.Item>
+
+          <Form.Item label="Moderator" name="userId">
+            <Select
+              placeholder="Moderator tanlang"
+              allowClear
+              options={moderators?.map((mod) => ({
+                label: mod.login,
+                value: mod.id,
+              }))}
+            />
           </Form.Item>
 
           <Form.Item className="mb-0 text-right">

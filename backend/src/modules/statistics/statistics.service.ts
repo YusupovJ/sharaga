@@ -20,11 +20,17 @@ export class StatisticsService {
     const [studentsCount, dormitoriesCount, presentTodayCount] = await Promise.all([
       this.prisma.students.count({ where: { dormitoryId: { not: null } } }),
       this.prisma.dormitory.count(),
-      this.prisma.history.count({
+      this.prisma.students.count({
         where: {
           createdAt: {
             gte: startOfDay,
             lte: endOfDay,
+          },
+          dormitoryId: { not: null },
+          history: {
+            some: {
+              isPresent: true,
+            },
           },
         },
       }),

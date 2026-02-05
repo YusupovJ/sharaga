@@ -19,6 +19,11 @@ export interface IDormitory {
   name: string;
   createdAt: string;
   updatedAt: string;
+  userId?: number;
+  user?: {
+    id: number;
+    login: string;
+  };
   students?: any[];
   _count?: {
     students: number;
@@ -27,10 +32,12 @@ export interface IDormitory {
 
 export interface CreateDormitoryDto {
   name: string;
+  userId?: number;
 }
 
 export interface UpdateDormitoryDto {
   name?: string;
+  userId?: number;
 }
 
 export interface IStatistics {
@@ -38,4 +45,9 @@ export interface IStatistics {
   dormitoriesCount: number;
   presentToday: number;
   absentToday: number;
+}
+
+export interface IUser {
+  id: number;
+  login: string;
 }

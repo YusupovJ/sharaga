@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Res, UseGuards } from "@nestjs/common";
+import type { Response as ExpressResponse } from "express";
 import { UserRole } from "generated/prisma/enums";
 import { Roles } from "src/common/decorators/roles.decorator";
 import { CurrentUser } from "src/common/decorators/user.decorator";
@@ -6,6 +7,8 @@ import { RolesGuard } from "src/common/guards/role.guard";
 import type { IPayload } from "src/common/types";
 import { AssignStudentDto } from "./dto/assign-student.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
+import { GetMonthAttendanceDto } from "./dto/get-month-attendance.dto";
+import { GetTodayAttendanceDto } from "./dto/get-today-attendance.dto";
 import { BulkAttendanceDto } from "./dto/mark-attendance.dto";
 import { StudentQueryDto } from "./dto/student-query.dto";
 import { UpdateStudentDto } from "./dto/update-student.dto";
@@ -32,6 +35,23 @@ export class StudentsController {
     return this.studentsService.searchGlobal(passport);
   }
 
+  @Get(":id/attendance/month")
+  getMonthAttendance(@Param("id") id: string, @Query() query: GetMonthAttendanceDto) {
+    return this.studentsService.getMonthAttendance(+id, query);
+  }
+
+  @Get(":id/attendance/export")
+  async exportAttendance(@Param("id") id: string, @Res() res: ExpressResponse) {
+    const { buffer, fileName } = await this.studentsService.getStudentAttendanceExcel(+id);
+
+    res.set({
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="${fileName}"`,
+    });
+
+    res.send(buffer);
+  }
+
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.studentsService.findOne(+id);
@@ -40,6 +60,11 @@ export class StudentsController {
   @Patch(":id")
   update(@Param("id") id: string, @Body() updateStudentDto: UpdateStudentDto) {
     return this.studentsService.update(+id, updateStudentDto);
+  }
+
+  @Patch(":id/room-job")
+  updateRoomJob(@Param("id") id: string, @Body() dto: { roomNumber?: string; job?: string }) {
+    return this.studentsService.updateRoomJob(+id, dto);
   }
 
   @Patch(":id/assign")
@@ -51,6 +76,11 @@ export class StudentsController {
   @Patch(":id/unassign")
   unassign(@Param("id") id: string) {
     return this.studentsService.unassignDormitory(+id);
+  }
+
+  @Get("attendance/today")
+  getTodayAttendance(@CurrentUser() user: IPayload, @Query() query: GetTodayAttendanceDto) {
+    return this.studentsService.getTodayAttendance(user, query);
   }
 
   @Post("attendance/bulk")

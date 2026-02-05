@@ -22,7 +22,7 @@ model user {
   token     String?
   role      UserRole  @default(moderator)
 
-  dormitory dormitory?
+  dormitory dormitory[]
   history   history[]
 }
 
@@ -50,7 +50,7 @@ model dormitory {
 
   students  students[]
 
-  userId    Int?       @unique
+  userId    Int?
   user      user?      @relation(fields: [userId], references: [id])
 
   history   history[]
@@ -65,12 +65,13 @@ model history {
   user        user      @relation(fields: [userId], references: [id])
 
   dormitoryId Int
-  dormitory   dormitory @relation(fields: [dormitoryId], references: [id])
+  dormitory   dormitory @relation(fields: [dormitoryId], references: [id], onDelete: Cascade)
 
   studentId   Int
-  student     students  @relation(fields: [studentId], references: [id])
+  student     students  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   isPresent   Boolean
+  roomNumber  String?
   date        DateTime  @default(now()) @db.Date
 
   @@unique([studentId, date])

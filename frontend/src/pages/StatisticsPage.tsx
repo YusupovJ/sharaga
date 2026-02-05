@@ -1,9 +1,4 @@
-import {
-    CheckCircleOutlined,
-    CloseCircleOutlined,
-    HomeOutlined,
-    TeamOutlined,
-} from "@ant-design/icons";
+import { CheckCircleOutlined, CloseCircleOutlined, HomeOutlined, TeamOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Card, Col, Row, Spin, Statistic, Typography } from "antd";
 import { api } from "../lib/axios";
@@ -68,9 +63,9 @@ const StatisticsPage = () => {
   ];
 
   return (
-    <main className="p-6 flex-1 min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <main className="p-4 md:p-6 flex-1 min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
       <div className="mb-8">
-        <Title level={2} className="!mb-1 !text-slate-800">
+        <Title level={2} className="mb-1! text-slate-800!">
           Statistika
         </Title>
         <p className="text-slate-500">Umumiy ko'rsatkichlar va bugungi holat</p>
@@ -93,21 +88,19 @@ const StatisticsPage = () => {
               <div
                 className={`
                   absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-20
-                  bg-gradient-to-br ${stat.gradient}
+                  bg-linear-to-br ${stat.gradient}
                 `}
               />
               <div
                 className={`
                   absolute -bottom-4 -left-4 w-16 h-16 rounded-full opacity-10
-                  bg-gradient-to-br ${stat.gradient}
+                  bg-linear-to-br ${stat.gradient}
                 `}
               />
 
               <div className="flex items-start justify-between relative z-10">
                 <div className="flex-1">
-                  <p className="text-slate-500 text-sm font-medium mb-2 uppercase tracking-wide">
-                    {stat.title}
-                  </p>
+                  <p className="text-slate-500 text-sm font-medium mb-2 uppercase tracking-wide">{stat.title}</p>
                   <Statistic
                     value={stat.value}
                     styles={{
@@ -135,7 +128,7 @@ const StatisticsPage = () => {
                 <div className="flex items-center gap-2">
                   <div
                     className={`
-                      w-2 h-2 rounded-full bg-gradient-to-r ${stat.gradient}
+                      w-2 h-2 rounded-full bg-linear-to-r ${stat.gradient}
                       animate-pulse
                     `}
                   />
@@ -150,27 +143,21 @@ const StatisticsPage = () => {
       {/* Summary section */}
       <div className="mt-8">
         <Card
-          className="border-0 shadow-lg bg-gradient-to-r from-slate-800 to-slate-900"
+          className="border-0 shadow-lg bg-linear-to-r from-slate-800 to-slate-900"
           styles={{
             body: { padding: "32px" },
           }}
         >
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <h3 className="text-white text-xl font-semibold mb-2">
-                Bugungi davomat holati
-              </h3>
-              <p className="text-slate-400">
-                {statistics?.presentToday || 0} ta talaba bugun qayd etildi
-              </p>
+              <h3 className="text-white text-xl font-semibold mb-2">Bugungi davomat holati</h3>
+              <p className="text-slate-400">{statistics?.presentToday || 0} ta talaba bugun qayd etildi</p>
             </div>
             <div className="flex items-center gap-8">
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-400">
                   {statistics?.studentsCount
-                    ? Math.round(
-                        ((statistics?.presentToday || 0) / statistics.studentsCount) * 100
-                      )
+                    ? Math.round(((statistics?.presentToday || 0) / statistics.studentsCount) * 100)
                     : 0}
                   %
                 </div>
@@ -180,9 +167,7 @@ const StatisticsPage = () => {
               <div className="text-center">
                 <div className="text-3xl font-bold text-red-400">
                   {statistics?.studentsCount
-                    ? Math.round(
-                        ((statistics?.absentToday || 0) / statistics.studentsCount) * 100
-                      )
+                    ? Math.round(((statistics?.absentToday || 0) / statistics.studentsCount) * 100)
                     : 0}
                   %
                 </div>

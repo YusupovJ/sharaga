@@ -1,5 +1,5 @@
-import { IsNumber, IsOptional, IsString } from "class-validator";
 import { Transform } from "class-transformer";
+import { IsNumber, IsOptional, IsString } from "class-validator";
 
 export class StudentQueryDto {
   @IsOptional()
@@ -9,13 +9,13 @@ export class StudentQueryDto {
 
   @IsOptional()
   @IsString()
-  fullName?: string;
+  search?: string;
 
   @IsOptional()
   @IsString()
-  passport?: string;
+  sort?: string;
 
   @IsOptional()
   @IsString()
-  faculty?: string;
+  order?: "asc" | "desc";
 }

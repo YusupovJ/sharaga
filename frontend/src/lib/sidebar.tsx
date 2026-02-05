@@ -1,4 +1,4 @@
-import { DashboardOutlined, HomeOutlined } from "@ant-design/icons";
+import { DashboardOutlined, HomeOutlined, UserOutlined } from "@ant-design/icons";
 import type { ReactNode } from "react";
 
 export interface SidebarItem {
@@ -23,5 +23,12 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     path: "/dormitories",
     icon: <HomeOutlined />,
     roles: ["admin"],
+  },
+  {
+    key: "students",
+    label: "Talabalar",
+    path: "/students",
+    icon: <UserOutlined />,
+    roles: ["moderator"],
   },
 ];

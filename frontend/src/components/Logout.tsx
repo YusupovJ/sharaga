@@ -6,7 +6,7 @@ import { useNavigate } from "react-router";
 import { api } from "../lib/axios";
 import { useAuthStore } from "../store/authStore";
 
-export const Logout = () => {
+export const Logout = ({ children }: { children?: React.ReactNode }) => {
   const { logout } = useAuthStore();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -36,15 +36,19 @@ export const Logout = () => {
       >
         Haqiqatan ham tizimdan chiqmoqchimisiz?
       </Modal>
-      <Button
-        danger
-        type="text"
-        icon={<LogoutOutlined />}
-        onClick={() => setOpen(true)}
-        className="w-full flex items-center justify-start h-11 px-4 text-base rounded-lg hover:bg-red-50"
-      >
-        Chiqish
-      </Button>
+      {children ? (
+        <div onClick={() => setOpen(true)}>{children}</div>
+      ) : (
+        <Button
+          danger
+          type="text"
+          icon={<LogoutOutlined />}
+          onClick={() => setOpen(true)}
+          className="w-full flex items-center justify-start h-11 px-4 text-base rounded-lg hover:bg-red-50"
+        >
+          Chiqish
+        </Button>
+      )}
     </>
   );
 };
