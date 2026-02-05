@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { PrivateRoute } from "./components/PrivateRoute";
 import DormitoryListPage from "./pages/DormitoryListPage";
 import LoginPage from "./pages/LoginPage";
+import StudentsPage from "./pages/StudentsPage";
 
 const router = createBrowserRouter([
   {
@@ -23,6 +24,14 @@ const router = createBrowserRouter([
       {
         path: "/dormitories",
         element: <DormitoryListPage />,
+      },
+      {
+        path: "/students",
+        element: <StudentsPage />,
+      },
+      {
+        path: "/dormitories/:dormId/students",
+        element: <StudentsPage />,
       },
     ],
   },

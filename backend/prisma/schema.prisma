@@ -38,6 +38,8 @@ model students {
   
   dormitoryId Int?
   dormitory   dormitory? @relation(fields: [dormitoryId], references: [id])
+
+  history     history[]
 }
 
 model dormitory {
@@ -59,9 +61,17 @@ model history {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
-  userId      Int       @unique
+  userId      Int
   user        user      @relation(fields: [userId], references: [id])
 
   dormitoryId Int
   dormitory   dormitory @relation(fields: [dormitoryId], references: [id])
+
+  studentId   Int
+  student     students  @relation(fields: [studentId], references: [id])
+
+  isPresent   Boolean
+  date        DateTime  @default(now()) @db.Date
+
+  @@unique([studentId, date])
 }

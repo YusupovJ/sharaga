@@ -1,9 +1,10 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined, TeamOutlined } from "@ant-design/icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button, Form, Input, Modal, Popconfirm, Space, Table, Typography, message } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import type { FilterValue, SorterResult } from "antd/es/table/interface";
 import { useState } from "react";
+import { Link } from "react-router";
 import { api } from "../lib/axios";
 import { queryClient } from "../lib/queryClient";
 import type { CreateDormitoryDto, IDormitory, IError, IPaginatedResponse, UpdateDormitoryDto } from "../lib/types";
@@ -73,7 +74,7 @@ const DormitoryListPage = () => {
   // --- Handlers ---
   const handleTableChange = (
     pagination: TablePaginationConfig,
-    filters: Record<string, FilterValue | null>,
+    _: Record<string, FilterValue | null>,
     sorter: SorterResult<IDormitory> | SorterResult<IDormitory>[],
   ) => {
     setPage(pagination.current || 1);
@@ -147,6 +148,11 @@ const DormitoryListPage = () => {
       width: "100px",
       render: (_: unknown, record: IDormitory) => (
         <Space size="middle">
+          <Link to={`/dormitories/${record.id}/students`}>
+            <Button type="default" icon={<TeamOutlined />}>
+              Talabalar
+            </Button>
+          </Link>
           <Button type="primary" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)} />
           <Popconfirm
             title="Siz haqiqatan ham ushbu yotoqxonani o'chirmoqchimisiz?"
