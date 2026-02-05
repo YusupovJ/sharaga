@@ -3,6 +3,7 @@ import { PrivateRoute } from "./components/PrivateRoute";
 import DormitoryListPage from "./pages/DormitoryListPage";
 import LoginPage from "./pages/LoginPage";
 import StudentsPage from "./pages/StudentsPage";
+import StatisticsPage from "./pages/StatisticsPage";
 
 const router = createBrowserRouter([
   {
@@ -15,11 +16,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: (
-          <div className="p-4">
-            <h1>Bosh sahifa (Himoyalangan)</h1>
-          </div>
-        ),
+        element: <StatisticsPage />,
       },
       {
         path: "/dormitories",
@@ -42,3 +39,4 @@ const router = createBrowserRouter([
 ]);
 
 export default router;
+

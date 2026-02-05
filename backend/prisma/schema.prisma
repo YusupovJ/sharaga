@@ -31,9 +31,9 @@ model students {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   fullName    String
-  passport    String
+  passport    String     @unique
   faculty     String
-  roomNumber  String
+  roomNumber  String?
   job         String?
   
   dormitoryId Int?

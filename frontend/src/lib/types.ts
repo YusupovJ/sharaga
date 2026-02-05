@@ -32,3 +32,10 @@ export interface CreateDormitoryDto {
 export interface UpdateDormitoryDto {
   name?: string;
 }
+
+export interface IStatistics {
+  studentsCount: number;
+  dormitoriesCount: number;
+  presentToday: number;
+  absentToday: number;
+}

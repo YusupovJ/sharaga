@@ -1,10 +1,10 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined, TeamOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button, Form, Input, Modal, Popconfirm, Space, Table, Typography, message } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import type { FilterValue, SorterResult } from "antd/es/table/interface";
 import { useState } from "react";
-import { Link } from "react-router";
+import { useNavigate } from "react-router";
 import { api } from "../lib/axios";
 import { queryClient } from "../lib/queryClient";
 import type { CreateDormitoryDto, IDormitory, IError, IPaginatedResponse, UpdateDormitoryDto } from "../lib/types";
@@ -13,18 +13,17 @@ const { Title } = Typography;
 const { Search } = Input;
 
 const DormitoryListPage = () => {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDormitory, setEditingDormitory] = useState<IDormitory | null>(null);
   const [form] = Form.useForm();
 
-  // Params state
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
 
-  // --- Queries ---
   const { data: response, isLoading } = useQuery<IPaginatedResponse<IDormitory>>({
     queryKey: ["dormitories", page, limit, search, sort, order],
     queryFn: async () => {
@@ -35,7 +34,6 @@ const DormitoryListPage = () => {
     },
   });
 
-  // --- Mutations ---
   const { mutate: createDormitory, isPending: isCreating } = useMutation<IDormitory, IError, CreateDormitoryDto>({
     mutationFn: (values) => api.post("/dormitory", values),
     onSuccess: () => {
@@ -71,7 +69,6 @@ const DormitoryListPage = () => {
     },
   });
 
-  // --- Handlers ---
   const handleTableChange = (
     pagination: TablePaginationConfig,
     _: Record<string, FilterValue | null>,
@@ -93,7 +90,7 @@ const DormitoryListPage = () => {
 
   const onSearch = (value: string) => {
     setSearch(value);
-    setPage(1); // Reset to first page on search
+    setPage(1);
   };
 
   const handleOpenCreate = () => {
@@ -122,7 +119,6 @@ const DormitoryListPage = () => {
     }
   };
 
-  // --- Columns ---
   const columns: ColumnsType<IDormitory> = [
     {
       title: "ID",
@@ -145,22 +141,25 @@ const DormitoryListPage = () => {
     {
       title: "Amallar",
       key: "action",
-      width: "100px",
+      width: "120px",
       render: (_: unknown, record: IDormitory) => (
         <Space size="middle">
-          <Link to={`/dormitories/${record.id}/students`}>
-            <Button type="default" icon={<TeamOutlined />}>
-              Talabalar
-            </Button>
-          </Link>
-          <Button type="primary" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)} />
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenEdit(record);
+            }}
+          />
           <Popconfirm
             title="Siz haqiqatan ham ushbu yotoqxonani o'chirmoqchimisiz?"
             onConfirm={() => deleteDormitory(record.id)}
+            onCancel={(e) => e?.stopPropagation()}
             okText="Ha"
             cancelText="Yo'q"
           >
-            <Button type="primary" danger icon={<DeleteOutlined />} />
+            <Button type="primary" danger icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()} />
           </Popconfirm>
         </Space>
       ),
@@ -200,6 +199,10 @@ const DormitoryListPage = () => {
           showSizeChanger: true,
         }}
         onChange={handleTableChange}
+        onRow={(record) => ({
+          onClick: () => navigate(`/dormitories/${record.id}/students`),
+          style: { cursor: "pointer" },
+        })}
       />
 
       <Modal
