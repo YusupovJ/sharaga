@@ -1,4 +1,4 @@
-import { LogoutOutlined, MenuOutlined } from "@ant-design/icons";
+import { CloseOutlined, LogoutOutlined, MenuOutlined } from "@ant-design/icons";
 import { Drawer } from "antd";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
@@ -6,27 +6,33 @@ import { SIDEBAR_ITEMS } from "../lib/sidebar";
 import { useAuthStore } from "../store/authStore";
 import { Logout } from "./Logout";
 
-const Sidebar = () => {
-  const { user } = useAuthStore();
+const NavContent = ({ setIsMobileOpen }: { setIsMobileOpen: (val: boolean) => void }) => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const location = useLocation();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-
   const filteredItems = SIDEBAR_ITEMS.filter((item) => {
     if (!user) return false;
     return item.roles.includes(user.role);
   });
 
-  const NavContent = () => (
+  return (
     <div className="flex flex-col h-full bg-white text-slate-600">
-      {/* Logo Area */}
-      <div className="p-6 flex items-center gap-3 border-b border-slate-100">
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-blue-200 shadow-lg">
-          T
+      <div className="flex">
+        {/* Logo Area */}
+        <div className="p-6 flex items-center gap-3 border-b border-slate-100">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-blue-200 shadow-lg">
+            T
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight m-0">
+            TTJ <span className="text-blue-600">URDU</span>
+          </h2>
         </div>
-        <h2 className="text-xl font-bold text-slate-800 tracking-tight m-0">
-          TTJ <span className="text-blue-600">URDU</span>
-        </h2>
+        <button
+          onClick={() => setIsMobileOpen(false)}
+          className="lg:hidden fixed top-4 right-4 z-1000 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+        >
+          <CloseOutlined />
+        </button>
       </div>
 
       {/* Navigation Items */}
@@ -85,13 +91,17 @@ const Sidebar = () => {
       </div>
     </div>
   );
+};
+
+const Sidebar = () => {
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
     <>
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 right-4 z-50 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+        className="lg:hidden fixed top-4 right-4 z-1000 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
       >
         <MenuOutlined />
       </button>
@@ -105,16 +115,16 @@ const Sidebar = () => {
         styles={{ body: { padding: 0 } }}
         closable={false}
       >
-        <NavContent />
+        <NavContent setIsMobileOpen={setIsMobileOpen} />
       </Drawer>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 z-40 w-[240px] bg-white border-r border-slate-200 h-screen shadow-sm">
-        <NavContent />
+      <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 z-40 w-60 bg-white border-r border-slate-200 h-screen shadow-sm">
+        <NavContent setIsMobileOpen={setIsMobileOpen} />
       </aside>
 
       {/* Desktop Spacer */}
-      <div className="hidden lg:block w-[240px] shrink-0 transition-all duration-300" />
+      <div className="hidden lg:block w-60 shrink-0 transition-all duration-300" />
     </>
   );
 };
