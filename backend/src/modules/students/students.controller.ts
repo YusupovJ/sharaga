@@ -14,7 +14,7 @@ import { StudentQueryDto } from "./dto/student-query.dto";
 import { UpdateStudentDto } from "./dto/update-student.dto";
 import { StudentsService } from "./students.service";
 
-@Roles(UserRole.admin, UserRole.moderator)
+@Roles(UserRole.admin, UserRole.moderator, UserRole.superAdmin)
 @UseGuards(RolesGuard)
 @Controller("students")
 export class StudentsController {
@@ -31,8 +31,8 @@ export class StudentsController {
   }
 
   @Get("search-global")
-  searchGlobal(@Query("passport") passport: string) {
-    return this.studentsService.searchGlobal(passport);
+  searchGlobal(@Query("passport") passport: string, @Query("page") page?: number, @Query("limit") limit?: number) {
+    return this.studentsService.searchGlobal(passport, Number(page) || 1, Number(limit) || 30);
   }
 
   @Get(":id/attendance/month")

@@ -1,9 +1,11 @@
 import { createBrowserRouter } from "react-router";
 import { PrivateRoute } from "./components/PrivateRoute";
+import { RoleRoute } from "./components/RoleRoute";
 import DormitoryListPage from "./pages/DormitoryListPage";
 import LoginPage from "./pages/LoginPage";
-import StudentsPage from "./pages/StudentsPage";
 import StatisticsPage from "./pages/StatisticsPage";
+import StudentsPage from "./pages/StudentsPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
 
 const router = createBrowserRouter([
   {
@@ -15,20 +17,40 @@ const router = createBrowserRouter([
     element: <PrivateRoute />,
     children: [
       {
-        path: "/",
+        index: true,
         element: <StatisticsPage />,
       },
       {
-        path: "/dormitories",
-        element: <DormitoryListPage />,
+        path: "super-admin",
+        element: (
+          <RoleRoute roles={["superAdmin"]}>
+            <SuperAdminPage />
+          </RoleRoute>
+        ),
       },
       {
-        path: "/students",
-        element: <StudentsPage />,
+        path: "dormitories",
+        element: (
+          <RoleRoute roles={["admin", "superAdmin"]}>
+            <DormitoryListPage />
+          </RoleRoute>
+        ),
       },
       {
-        path: "/dormitories/:dormId/students",
-        element: <StudentsPage />,
+        path: "dormitories/:dormId/students",
+        element: (
+          <RoleRoute roles={["admin", "superAdmin"]}>
+            <StudentsPage />
+          </RoleRoute>
+        ),
+      },
+      {
+        path: "students",
+        element: (
+          <RoleRoute roles={["moderator"]}>
+            <StudentsPage />
+          </RoleRoute>
+        ),
       },
     ],
   },
@@ -39,4 +61,3 @@ const router = createBrowserRouter([
 ]);
 
 export default router;
-

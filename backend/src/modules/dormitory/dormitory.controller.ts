@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { UserRole } from "generated/prisma/enums";
 import { Roles } from "src/common/decorators/roles.decorator";
 import { RolesGuard } from "src/common/guards/role.guard";
 import { DormitoryService } from "./dormitory.service";
@@ -6,7 +7,7 @@ import { CreateDormitoryDto } from "./dto/create-dormitory.dto";
 import { UpdateDormitoryDto } from "./dto/update-dormitory.dto";
 
 @Controller("dormitory")
-@Roles("admin")
+@Roles(UserRole.admin, UserRole.superAdmin)
 @UseGuards(RolesGuard)
 export class DormitoryController {
   constructor(private readonly dormitoryService: DormitoryService) {}

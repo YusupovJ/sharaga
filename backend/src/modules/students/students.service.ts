@@ -31,7 +31,7 @@ export class StudentsService {
         return [];
       }
       where.dormitoryId = { in: dormitory.map((d) => d.id) };
-    } else if (user.role === UserRole.admin && query.dormitoryId) {
+    } else if ((user.role === UserRole.admin || user.role === UserRole.superAdmin) && query.dormitoryId) {
       where.dormitoryId = Number(query.dormitoryId);
     }
 
@@ -60,25 +60,66 @@ export class StudentsService {
       orderBy.id = "asc";
     }
 
-    return this.prisma.students.findMany({
-      where,
-      include: {
-        dormitory: true,
+    const page = query.page || 1;
+    const limit = query.limit || 30;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.students.findMany({
+        where,
+        include: {
+          dormitory: true,
+        },
+        orderBy,
+        skip,
+        take: Number(limit),
+      }),
+      this.prisma.students.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      orderBy,
-    });
+    };
   }
 
-  async searchGlobal(passport: string) {
-    if (!passport) return [];
-    return this.prisma.students.findMany({
-      where: {
-        passport: { contains: passport, mode: "insensitive" },
+  async searchGlobal(passport: string, page = 1, limit = 30) {
+    if (!passport) return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.students.findMany({
+        where: {
+          passport: { contains: passport, mode: "insensitive" },
+        },
+        include: {
+          dormitory: true,
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.students.count({
+        where: {
+          passport: { contains: passport, mode: "insensitive" },
+        },
+      }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
-      include: {
-        dormitory: true,
-      },
-    });
+    };
   }
 
   async findOne(id: number) {
@@ -152,7 +193,7 @@ export class StudentsService {
     const todayStr = `${year}-${month}-${day}`;
     const today = new Date(todayStr);
 
-    let dormitoryId = Number(query.dormitoryId);
+    const dormitoryId = Number(query.dormitoryId);
     let dormitoryIds: number[] = [];
 
     if (user.role === UserRole.moderator) {

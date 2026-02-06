@@ -6,12 +6,13 @@ import {
   SearchOutlined,
   UserDeleteOutlined,
 } from "@ant-design/icons";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import { Button, Checkbox, Input, Modal, Popconfirm, Space, Table, Tag, Typography, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { useDebounce } from "../hooks/useDebounce";
 import { api, baseURL } from "../lib/axios";
 import { queryClient } from "../lib/queryClient";
 import { useAuthStore } from "../store/authStore";
@@ -64,22 +65,36 @@ const StudentsPage = () => {
 
   // Filters & sorting
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [sort, setSort] = useState({ field: "id", order: "asc" });
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
-  const [foundStudents, setFoundStudents] = useState<IStudent[]>([]);
+  const [triggeredSearch, setTriggeredSearch] = useState("");
+  const [loadMoreRef, setLoadMoreRef] = useState<HTMLDivElement | null>(null);
+  const [searchLoadMoreRef, setSearchLoadMoreRef] = useState<HTMLDivElement | null>(null);
 
   // --- Queries ---
-  const { data: students, isLoading } = useQuery<IStudent[]>({
-    queryKey: ["students", dormId, search, sort],
-    queryFn: async () => {
-      const params: any = { search, sort: sort.field, order: sort.order };
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
+    queryKey: ["students", dormId, debouncedSearch, sort],
+    queryFn: async ({ pageParam = 1 }) => {
+      const params: any = { search: debouncedSearch, sort: sort.field, order: sort.order, page: pageParam, limit: 30 };
       if (dormId) params.dormitoryId = dormId;
-      return api.get("/students", { params });
+      const res = await api.get("/students", { params });
+      return res as any;
     },
+    getNextPageParam: (lastPage: any) => {
+      // Check if we have meta, if not (e.g. error or old api) return undefined
+      if (!lastPage?.meta) return undefined;
+      const { page, totalPages } = lastPage.meta;
+      // Ensure we compare numbers
+      return Number(page) < Number(totalPages) ? Number(page) + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
+
+  const students = data?.pages.flatMap((page) => page.data) || [];
 
   const { data: todayAttendance = [] } = useQuery<{ studentId: number; isPresent: boolean }[]>({
     queryKey: ["todayAttendance", dormId],
@@ -101,12 +116,64 @@ const StudentsPage = () => {
   const [editingStudent, setEditingStudent] = useState<IStudent | null>(null);
   const [editForm, setEditForm] = useState({ roomNumber: "", job: "" });
 
-  const { mutate: searchGlobal, isPending: isSearching } = useMutation({
-    mutationFn: (passport: string) => api.get("/students/search-global", { params: { passport } }),
-    onSuccess: (data: any) => {
-      setFoundStudents(data);
+  const {
+    data: searchData,
+    fetchNextPage: fetchNextSearchPage,
+    hasNextPage: hasNextSearchPage,
+    isFetchingNextPage: isFetchingNextSearchPage,
+    isLoading: isSearching,
+  } = useInfiniteQuery({
+    queryKey: ["students-global-search", triggeredSearch],
+    queryFn: async ({ pageParam = 1 }) => {
+      if (!triggeredSearch) return { data: [], meta: { total: 0, totalPages: 0 } };
+      return api.get("/students/search-global", {
+        params: { passport: triggeredSearch, page: pageParam, limit: 30 },
+      }) as any;
     },
+    getNextPageParam: (lastPage: any) => {
+      if (!lastPage?.meta) return undefined;
+      const { page, totalPages } = lastPage.meta;
+      return Number(page) < Number(totalPages) ? Number(page) + 1 : undefined;
+    },
+    initialPageParam: 1,
+    enabled: !!triggeredSearch && isAddModalOpen && !selectedStudent,
   });
+
+  const foundStudents = searchData?.pages.flatMap((p) => p.data) || [];
+
+  // Scroll detection for main list
+  useEffect(() => {
+    if (!loadMoreRef || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { root: null, threshold: 0.1 },
+    );
+
+    observer.observe(loadMoreRef);
+    return () => observer.disconnect();
+  }, [loadMoreRef, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Scroll detection for search list
+  useEffect(() => {
+    if (!searchLoadMoreRef || !hasNextSearchPage || isFetchingNextSearchPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextSearchPage();
+        }
+      },
+      { root: null, threshold: 0.1 },
+    );
+
+    observer.observe(searchLoadMoreRef);
+    return () => observer.disconnect();
+  }, [searchLoadMoreRef, hasNextSearchPage, isFetchingNextSearchPage, fetchNextSearchPage]);
 
   const { data: monthAttendance, isLoading: isLoadingHistory } = useQuery({
     queryKey: ["monthAttendance", selectedStudentForHistory],
@@ -132,9 +199,8 @@ const StudentsPage = () => {
     onSuccess: () => {
       message.success("Talaba yotoqxonaga qo'shildi");
       queryClient.invalidateQueries({ queryKey: ["students"] });
-      setIsAddModalOpen(false);
-      setFoundStudents([]);
-      setGlobalSearch("");
+      queryClient.invalidateQueries({ queryKey: ["students-global-search"] }); // Refresh search results to update UI state
+      // Do not close modal or clear search so user can see updated status
       setSelectedStudent(null);
       setAssignForm({ roomNumber: "", job: "" });
     },
@@ -216,7 +282,7 @@ const StudentsPage = () => {
   };
 
   const handleGlobalSearch = () => {
-    if (globalSearch) searchGlobal(globalSearch);
+    if (globalSearch) setTriggeredSearch(globalSearch);
   };
 
   const handleTableChange = (_pagination: any, _filters: any, sorter: any) => {
@@ -277,18 +343,17 @@ const StudentsPage = () => {
         setAttendance(Number(studentId), isPresent);
       });
     }
-  }, [isAttendanceMode, user?.role, todayAttendance]);
+  }, [isAttendanceMode, user?.role, todayAttendance, setAttendance]);
 
   const currentDormId = dormId ? +dormId : undefined;
 
   // --- Columns ---
   const columns: ColumnsType<IStudent> = [
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: 100,
-      sorter: true,
+      title: "#",
+      key: "index",
+      width: 50,
+      render: (_: any, __: any, index: number) => index + 1,
     },
     {
       title: "F.I.O",
@@ -462,7 +527,7 @@ const StudentsPage = () => {
         columns={columns}
         rowKey="id"
         loading={isLoading}
-        pagination={{ pageSize: 20 }}
+        pagination={false}
         onChange={handleTableChange}
         scroll={{ x: 1000 }}
         onRow={(record) => {
@@ -491,13 +556,18 @@ const StudentsPage = () => {
           };
         }}
       />
+      {/* Sentinel for infinite scroll */}
+      {/* Ensure it has dimension so observer can see it */}
+      <div ref={setLoadMoreRef} className="h-10 w-full flex items-center justify-center py-4 text-gray-500">
+        {(hasNextPage || isFetchingNextPage) && (isFetchingNextPage ? "Yuklanmoqda..." : "Yana yuklash...")}
+      </div>
 
       <Modal
         title="Talaba qo'shish"
         open={isAddModalOpen}
         onCancel={() => {
           setIsAddModalOpen(false);
-          setFoundStudents([]);
+          setTriggeredSearch("");
           setGlobalSearch("");
           setSelectedStudent(null);
           setAssignForm({ roomNumber: "", job: "" });
@@ -552,39 +622,49 @@ const StudentsPage = () => {
             </div>
 
             {foundStudents.length > 0 && (
-              <Table
-                dataSource={foundStudents}
-                rowKey="id"
-                pagination={false}
-                columns={[
-                  { title: "F.I.O", dataIndex: "fullName" },
-                  { title: "Pasport", dataIndex: "passport" },
-                  {
-                    title: "Hozirgi yotoqxonasi",
-                    dataIndex: ["dormitory", "name"],
-                    render: (val) => val || <Tag color="green">Biriktirilmagan</Tag>,
-                  },
-                  {
-                    title: "Amal",
-                    render: (_, record) => (
-                      <Button
-                        type="primary"
-                        disabled={!!record.dormitoryId}
-                        onClick={() => {
-                          if (currentDormId) {
-                            setSelectedStudent(record);
-                            setAssignForm({ roomNumber: "", job: "" });
-                          } else {
-                            message.warning("Iltimos, avval biror yotoqxonani tanlang (Admin)");
-                          }
-                        }}
-                      >
-                        Qo'shish
-                      </Button>
-                    ),
-                  },
-                ]}
-              />
+              <>
+                <Table
+                  dataSource={foundStudents}
+                  rowKey="id"
+                  pagination={false}
+                  columns={[
+                    { title: "F.I.O", dataIndex: "fullName" },
+                    { title: "Pasport", dataIndex: "passport" },
+                    {
+                      title: "Hozirgi yotoqxonasi",
+                      dataIndex: ["dormitory", "name"],
+                      render: (val: any) => val || <Tag color="green">Biriktirilmagan</Tag>,
+                    },
+                    {
+                      title: "Amal",
+                      render: (_: any, record: IStudent) => (
+                        <Button
+                          type="primary"
+                          disabled={!!record.dormitoryId}
+                          onClick={() => {
+                            if (currentDormId) {
+                              setSelectedStudent(record);
+                              setAssignForm({ roomNumber: "", job: "" });
+                            } else {
+                              message.warning("Iltimos, avval biror yotoqxonani tanlang (Admin)");
+                            }
+                          }}
+                        >
+                          Qo'shish
+                        </Button>
+                      ),
+                    },
+                  ]}
+                />
+                {/* Search Sentinel */}
+                <div
+                  ref={setSearchLoadMoreRef}
+                  className="h-10 w-full flex items-center justify-center py-2 text-gray-500"
+                >
+                  {(hasNextSearchPage || isFetchingNextSearchPage) &&
+                    (isFetchingNextSearchPage ? "Yuklanmoqda..." : "...")}
+                </div>
+              </>
             )}
             {foundStudents.length === 0 && globalSearch && !isSearching && (
               <div className="text-center text-gray-500">Talaba topilmadi</div>

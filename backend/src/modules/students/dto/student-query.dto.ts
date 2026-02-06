@@ -18,4 +18,14 @@ export class StudentQueryDto {
   @IsOptional()
   @IsString()
   order?: "asc" | "desc";
+
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => Number(value))
+  page?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => Number(value))
+  limit?: number;
 }

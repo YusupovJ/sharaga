@@ -136,11 +136,10 @@ const DormitoryListPage = () => {
 
   const columns: ColumnsType<IDormitory> = [
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: "100px",
-      sorter: true,
+      title: "#",
+      key: "index",
+      width: "50px",
+      render: (_: any, __: any, index: number) => (page - 1) * limit + index + 1,
     },
     {
       title: "Nomi",

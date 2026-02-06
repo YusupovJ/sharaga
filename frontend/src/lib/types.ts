@@ -45,9 +45,11 @@ export interface IStatistics {
   dormitoriesCount: number;
   presentToday: number;
   absentToday: number;
+  hasAttendanceToday: boolean;
 }
 
 export interface IUser {
   id: number;
   login: string;
+  role: "superAdmin" | "admin" | "moderator";
 }

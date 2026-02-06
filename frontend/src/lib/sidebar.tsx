@@ -6,7 +6,7 @@ export interface SidebarItem {
   label: string;
   path: string;
   icon: ReactNode;
-  roles: Array<"admin" | "moderator">;
+  roles: Array<"superAdmin" | "admin" | "moderator">;
 }
 
 export const SIDEBAR_ITEMS: SidebarItem[] = [
@@ -15,14 +15,21 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     label: "Bosh sahifa",
     path: "/",
     icon: <DashboardOutlined />,
-    roles: ["admin", "moderator"],
+    roles: ["superAdmin", "admin", "moderator"],
+  },
+  {
+    key: "users",
+    label: "Foydalanuvchilar",
+    path: "/super-admin",
+    icon: <UserOutlined />,
+    roles: ["superAdmin"],
   },
   {
     key: "dormitories",
     label: "Yotoqxonalar",
     path: "/dormitories",
     icon: <HomeOutlined />,
-    roles: ["admin"],
+    roles: ["superAdmin", "admin"],
   },
   {
     key: "students",

@@ -4,7 +4,7 @@ import { persist } from "zustand/middleware";
 export interface IUser {
   id: string;
   login: string;
-  role: "admin" | "moderator";
+  role: "superAdmin" | "admin" | "moderator";
   accessToken: string;
   refreshToken: string;
 }

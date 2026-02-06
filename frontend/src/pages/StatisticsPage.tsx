@@ -72,111 +72,135 @@ const StatisticsPage = () => {
       </div>
 
       <Row gutter={[24, 24]}>
-        {statsCards.map((stat, index) => (
-          <Col xs={24} sm={12} lg={6} key={index}>
-            <Card
-              className={`
+        {statsCards.map((stat, index) => {
+          // Hide attendance cards (index 2 and 3) if no attendance data today
+          if (!statistics?.hasAttendanceToday && (index === 2 || index === 3)) {
+            return null;
+          }
+
+          return (
+            <Col xs={24} sm={12} lg={6} key={index}>
+              <Card
+                className={`
                 relative overflow-hidden border-0 shadow-lg hover:shadow-xl 
                 transition-all duration-300 transform hover:-translate-y-1
                 ${stat.bgLight}
               `}
-              styles={{
-                body: { padding: "24px" },
-              }}
-            >
-              {/* Background decoration */}
-              <div
-                className={`
+                styles={{
+                  body: { padding: "24px" },
+                }}
+              >
+                {/* Background decoration */}
+                <div
+                  className={`
                   absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-20
                   bg-linear-to-br ${stat.gradient}
                 `}
-              />
-              <div
-                className={`
+                />
+                <div
+                  className={`
                   absolute -bottom-4 -left-4 w-16 h-16 rounded-full opacity-10
                   bg-linear-to-br ${stat.gradient}
                 `}
-              />
+                />
 
-              <div className="flex items-start justify-between relative z-10">
-                <div className="flex-1">
-                  <p className="text-slate-500 text-sm font-medium mb-2 uppercase tracking-wide">{stat.title}</p>
-                  <Statistic
-                    value={stat.value}
-                    styles={{
-                      content: {
-                        fontSize: "2.5rem",
-                        fontWeight: 700,
-                        lineHeight: 1.2,
-                      },
-                    }}
-                    className={stat.textColor}
-                  />
-                </div>
-                <div
-                  className={`
+                <div className="flex items-start justify-between relative z-10">
+                  <div className="flex-1">
+                    <p className="text-slate-500 text-sm font-medium mb-2 uppercase tracking-wide">{stat.title}</p>
+                    <Statistic
+                      value={stat.value}
+                      styles={{
+                        content: {
+                          fontSize: "2.5rem",
+                          fontWeight: 700,
+                          lineHeight: 1.2,
+                        },
+                      }}
+                      className={stat.textColor}
+                    />
+                  </div>
+                  <div
+                    className={`
                     ${stat.iconBg} p-4 rounded-2xl ${stat.textColor}
                     shadow-sm
                   `}
-                >
-                  {stat.icon}
+                  >
+                    {stat.icon}
+                  </div>
                 </div>
-              </div>
 
-              {/* Progress indicator */}
-              <div className="mt-4 pt-4 border-t border-slate-200/50">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`
+                {/* Progress indicator */}
+                <div className="mt-4 pt-4 border-t border-slate-200/50">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`
                       w-2 h-2 rounded-full bg-linear-to-r ${stat.gradient}
                       animate-pulse
                     `}
-                  />
-                  <span className="text-xs text-slate-400">Jonli ma'lumotlar</span>
+                    />
+                    <span className="text-xs text-slate-400">Jonli ma'lumotlar</span>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          </Col>
-        ))}
+              </Card>
+            </Col>
+          );
+        })}
       </Row>
 
-      {/* Summary section */}
-      <div className="mt-8">
-        <Card
-          className="border-0 shadow-lg bg-linear-to-r from-slate-800 to-slate-900"
-          styles={{
-            body: { padding: "32px" },
-          }}
-        >
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="text-white text-xl font-semibold mb-2">Bugungi davomat holati</h3>
-              <p className="text-slate-400">{statistics?.presentToday || 0} ta talaba bugun qayd etildi</p>
+      {/* Show message when no attendance data */}
+      {!statistics?.hasAttendanceToday && (
+        <div className="mt-8">
+          <Card className="border-0 shadow-lg">
+            <div className="text-center py-8">
+              <CloseCircleOutlined className="text-6xl text-slate-300 mb-4" />
+              <Title level={4} className="text-slate-600">
+                Bugun hali davomat olinmagan
+              </Title>
+              <p className="text-slate-400">Davomat ma'lumotlari mavjud bo'lganda bu yerda ko'rsatiladi</p>
             </div>
-            <div className="flex items-center gap-8">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-400">
-                  {statistics?.studentsCount
-                    ? Math.round(((statistics?.presentToday || 0) / statistics.studentsCount) * 100)
-                    : 0}
-                  %
-                </div>
-                <div className="text-slate-400 text-sm">Davomat foizi</div>
+          </Card>
+        </div>
+      )}
+
+      {/* Summary section - only show if attendance data exists */}
+      {statistics?.hasAttendanceToday && (
+        <div className="mt-8">
+          <Card
+            className="border-0 shadow-lg bg-linear-to-r from-slate-800 to-slate-900"
+            styles={{
+              body: { padding: "32px" },
+            }}
+          >
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div>
+                <h3 className="text-white text-xl font-semibold mb-2">Bugungi davomat holati</h3>
+                <p className="text-slate-400">{statistics?.presentToday || 0} ta talaba bugun qayd etildi</p>
               </div>
-              <div className="w-px h-12 bg-slate-600" />
-              <div className="text-center">
-                <div className="text-3xl font-bold text-red-400">
-                  {statistics?.studentsCount
-                    ? Math.round(((statistics?.absentToday || 0) / statistics.studentsCount) * 100)
-                    : 0}
-                  %
+              <div className="flex items-center gap-8">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-400">
+                    {statistics?.studentsCount
+                      ? Math.round(((statistics?.presentToday || 0) / statistics.studentsCount) * 100)
+                      : 0}
+                    %
+                  </div>
+                  <div className="text-slate-400 text-sm">Davomat foizi</div>
                 </div>
-                <div className="text-slate-400 text-sm">Kelmaganlar</div>
+                <div className="w-px h-12 bg-slate-600" />
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-red-400">
+                    {statistics?.studentsCount
+                      ? Math.round(((statistics?.absentToday || 0) / statistics.studentsCount) * 100)
+                      : 0}
+                    %
+                  </div>
+                  <div className="text-slate-400 text-sm">Kelmaganlar</div>
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
+      )}
     </main>
   );
 };
