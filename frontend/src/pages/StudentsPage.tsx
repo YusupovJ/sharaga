@@ -56,8 +56,9 @@ interface IMonthAttendance {
 }
 
 const StudentsPage = () => {
-  const { dormId } = useParams();
+  const params = useParams();
   const user = useAuthStore((state) => state.user);
+  const dormId = user?.dormId || params.dormId;
 
   // Attendan states
   const { attendanceData, setAttendance, resetAttendance, clearAttendanceData, isAttendanceMode, toggleMode } =
@@ -398,8 +399,8 @@ const StudentsPage = () => {
         let isChecked = false;
         if (attendanceData[record.id] !== undefined) {
           isChecked = attendanceData[record.id];
-        } else if (isLocked && existingAttendance) {
-          isChecked = existingAttendance.isPresent;
+        } else {
+          isChecked = !!existingAttendance?.isPresent;
         }
 
         return (

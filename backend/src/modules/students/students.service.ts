@@ -225,6 +225,71 @@ export class StudentsService {
     return records;
   }
 
+  async getTodayPresentStudents(user: IPayload, dormitoryId: number, page = 1, limit = 30) {
+    // Create date in ISO format (YYYY-MM-DD) to avoid timezone issues
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const todayStr = `${year}-${month}-${day}`;
+    const today = new Date(todayStr);
+
+    let dormitoryIds: number[] = [];
+
+    if (user.role === UserRole.moderator) {
+      const dorms = await this.prisma.dormitory.findMany({ where: { userId: user.id }, select: { id: true } });
+      if (!dorms.length) throw new ForbiddenException("Moderator has no dormitory");
+      dormitoryIds = dorms.map((d) => d.id);
+    } else if (dormitoryId) {
+      dormitoryIds = [dormitoryId];
+    }
+
+    const where: any = {
+      date: today,
+      isPresent: true, // Only get present students
+    };
+
+    if (dormitoryIds.length > 0) {
+      where.student = {
+        dormitoryId: { in: dormitoryIds },
+      };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [records, total] = await Promise.all([
+      this.prisma.history.findMany({
+        where,
+        include: {
+          student: {
+            include: {
+              dormitory: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          studentId: "asc",
+        },
+      }),
+      this.prisma.history.count({ where }),
+    ]);
+
+    // Extract students from history records
+    const students = records.map((record) => record.student);
+
+    return {
+      data: students,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async getMonthAttendance(studentId: number, query: GetMonthAttendanceDto) {
     // Use current year/month if not specified
     const now = new Date();

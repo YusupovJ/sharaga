@@ -83,6 +83,21 @@ export class StudentsController {
     return this.studentsService.getTodayAttendance(user, query);
   }
 
+  @Get("attendance/today/students")
+  getTodayPresentStudents(
+    @CurrentUser() user: IPayload,
+    @Query("dormitoryId") dormitoryId?: number,
+    @Query("page") page?: number,
+    @Query("limit") limit?: number,
+  ) {
+    return this.studentsService.getTodayPresentStudents(
+      user,
+      Number(dormitoryId),
+      Number(page) || 1,
+      Number(limit) || 30,
+    );
+  }
+
   @Post("attendance/bulk")
   bulkAttendance(@CurrentUser() user: IPayload, @Body() dto: BulkAttendanceDto) {
     return this.studentsService.bulkAttendance(user, dto);

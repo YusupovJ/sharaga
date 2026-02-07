@@ -18,6 +18,9 @@ export class AuthService {
     const { login, password } = loginDto;
     const user = await this.prisma.user.findUnique({
       where: { login },
+      include: {
+        dormitory: true
+      }
     });
 
     if (!user) {
@@ -38,6 +41,7 @@ export class AuthService {
     return {
       id: user.id,
       role: user.role,
+      dormId: user.role === UserRole.moderator ? user.dormitory?.[0]?.id : undefined,
       accessToken,
       refreshToken,
     };
@@ -50,6 +54,7 @@ export class AuthService {
       });
       const user = await this.prisma.user.findUnique({
         where: { id: payload.id },
+        include: { dormitory: true }
       });
 
       if (!user || user.token !== token) {
@@ -66,6 +71,7 @@ export class AuthService {
       return {
         ...tokens,
         id: user.id,
+        dormId: user.role === UserRole.moderator ? user.dormitory?.[0]?.id : undefined,
         role: user.role,
       };
     } catch {

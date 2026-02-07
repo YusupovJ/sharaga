@@ -1,12 +1,16 @@
 import { CheckCircleOutlined, CloseCircleOutlined, HomeOutlined, TeamOutlined } from "@ant-design/icons";
-import { useQuery } from "@tanstack/react-query";
-import { Card, Col, Row, Spin, Statistic, Typography } from "antd";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { Card, Col, Modal, Row, Spin, Statistic, Table, Typography } from "antd";
+import { useEffect, useState } from "react";
 import { api } from "../lib/axios";
-import type { IStatistics } from "../lib/types";
+import type { IPaginatedResponse, IStatistics, IStudent } from "../lib/types";
 
 const { Title } = Typography;
 
 const StatisticsPage = () => {
+  const [isPresentModalOpen, setIsPresentModalOpen] = useState(false);
+  const [loadMoreRef, setLoadMoreRef] = useState<HTMLDivElement | null>(null);
+
   const { data: statistics, isLoading } = useQuery<IStatistics>({
     queryKey: ["statistics"],
     queryFn: async () => {
@@ -14,6 +18,48 @@ const StatisticsPage = () => {
       return data as unknown as IStatistics;
     },
   });
+
+  // Infinite query for present students
+  const {
+    data: presentStudentsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isLoadingPresentStudents,
+  } = useInfiniteQuery({
+    queryKey: ["presentStudents"],
+    queryFn: async ({ pageParam = 1 }) => {
+      return api.get("/students/attendance/today/students", {
+        params: { page: pageParam, limit: 30 },
+      }) as Promise<IPaginatedResponse<IStudent>>;
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage?.meta) return undefined;
+      const { page, totalPages } = lastPage.meta;
+      return Number(page) < Number(totalPages) ? Number(page) + 1 : undefined;
+    },
+    initialPageParam: 1,
+    enabled: isPresentModalOpen,
+  });
+
+  const presentStudents = presentStudentsData?.pages.flatMap((page) => page.data) || [];
+
+  // Scroll detection for modal infinite scroll
+  useEffect(() => {
+    if (!loadMoreRef || !hasNextPage || isFetchingNextPage || !isPresentModalOpen) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { root: null, threshold: 0.1 },
+    );
+
+    observer.observe(loadMoreRef);
+    return () => observer.disconnect();
+  }, [loadMoreRef, hasNextPage, isFetchingNextPage, fetchNextPage, isPresentModalOpen]);
 
   if (isLoading) {
     return (
@@ -84,8 +130,9 @@ const StatisticsPage = () => {
                 className={`
                 relative overflow-hidden border-0 shadow-lg hover:shadow-xl 
                 transition-all duration-300 transform hover:-translate-y-1
-                ${stat.bgLight}
+                ${stat.bgLight} ${index === 2 ? "cursor-pointer" : ""}
               `}
+                onClick={() => index === 2 && setIsPresentModalOpen(true)}
                 styles={{
                   body: { padding: "24px" },
                 }}
@@ -201,6 +248,56 @@ const StatisticsPage = () => {
           </Card>
         </div>
       )}
+
+      <Modal
+        title="Bugun kelgan talabalar ro'yxati"
+        open={isPresentModalOpen}
+        onCancel={() => setIsPresentModalOpen(false)}
+        footer={null}
+        width={800}
+        styles={{ body: { maxHeight: "70vh", overflowY: "auto", padding: "0" } }}
+      >
+        <Table
+          dataSource={presentStudents}
+          pagination={false}
+          loading={isLoadingPresentStudents}
+          rowKey="id"
+          columns={[
+            {
+              title: "#",
+              key: "index",
+              width: 50,
+              render: (_: any, __: any, index: number) => index + 1,
+            },
+            {
+              title: "F.I.O",
+              dataIndex: "fullName",
+              key: "fullName",
+            },
+            {
+              title: "Pasport",
+              dataIndex: "passport",
+              key: "passport",
+              responsive: ["md"],
+            },
+            {
+              title: "Fakultet",
+              dataIndex: "faculty",
+              key: "faculty",
+              responsive: ["lg"],
+            },
+            {
+              title: "Xona",
+              dataIndex: "roomNumber",
+              key: "roomNumber",
+              width: 100,
+            },
+          ]}
+        />
+        <div ref={setLoadMoreRef} className="h-10 w-full flex items-center justify-center py-4 text-slate-500">
+          {(hasNextPage || isFetchingNextPage) && (isFetchingNextPage ? <Spin size="small" /> : "Yana yuklash...")}
+        </div>
+      </Modal>
     </main>
   );
 };

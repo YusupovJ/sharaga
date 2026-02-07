@@ -53,3 +53,17 @@ export interface IUser {
   login: string;
   role: "superAdmin" | "admin" | "moderator";
 }
+
+export interface IStudent {
+  id: number;
+  fullName: string;
+  passport: string;
+  faculty: string;
+  roomNumber: string;
+  job?: string;
+  dormitoryId?: number;
+  dormitory?: {
+    id: number;
+    name: string;
+  };
+}

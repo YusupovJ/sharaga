@@ -5,6 +5,7 @@ export interface IUser {
   id: string;
   login: string;
   role: "superAdmin" | "admin" | "moderator";
+  dormId?: number;
   accessToken: string;
   refreshToken: string;
 }
